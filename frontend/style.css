@@ -6,7 +6,6 @@
 }
 
 * { box-sizing: border-box; scroll-behavior: smooth;}
-
 body {
   margin: 0;
   width: 100%;
@@ -24,6 +23,12 @@ body {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  transform-style: preserve-3d;
+  transform: perspective(1000px);
+  perspective: 1000px;
+}
+.main:hover .container h1 {
+  transform: translateY(-2vw);
 }
 .container {
   position: absolute;
@@ -32,6 +37,8 @@ body {
   left: 8%;
   transform: translateY(-50%);
   pointer-events: none;
+  transition: .2s;
+  perspective: 1000px;
 }
 .container h1 {
   font-size: 8vw;
@@ -40,6 +47,7 @@ body {
   font-weight: 900;
   color: #000;
   position: relative;
+  transition: .2s;
 }
 
 .container h1 span:last-child {
