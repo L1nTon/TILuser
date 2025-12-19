@@ -245,8 +245,16 @@
   </main>
 
   <script type="module" src="./main.js"></script>
-  <script>
-    const canvas = document.getElementById('canvas');
+  <script type="text/javascript" src="vanilla-tilt.js"></script>
+  <script type="text/javascript">
+      VanillaTilt.init(document.querySelectorAll("canvas"), {
+          max: 10,
+          speed: 400,
+          glare: true,
+          "max-glare": 0.8,
+      });
+
+const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
 let config = {
@@ -451,5 +459,6 @@ window.addEventListener('scroll', () => {
     mainElement.style.backgroundColor = color;
 });
   </script>
+
 </body>
 </html>
