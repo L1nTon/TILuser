@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumio Style Particles</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #0a0a0a; /* Глубокий темный фон */
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: sans-serif;
+        }
+        canvas {
+            filter: contrast(1.2) brightness(1.1); /* Добавляем сочности частицам */
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="canvas1"></canvas>
+
+<script>
+const canvas = document.getElementById('canvas1');
+const ctx = canvas.getContext('2d', { willReadFrequently: true });
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let particles = [];
+const mouse = {
+    x: null,
+    y: null,
+    radius: 100 // Радиус "кисти"
+}
+
+window.addEventListener('mousemove', (e) => {
+    mouse.x = e.x;
+    mouse.y = e.y;
+});
+
+class Particle {
+    constructor(x, y) {
+        this.originX = x;
+        this.originY = y;
+        this.x = x + (Math.random() * 20 - 10); // Слегка смещаем для эффекта шума
+        this.y = y + (Math.random() * 20 - 10);
+        this.size = Math.random() * 1.5 + 0.5; // Разный размер частиц
+        this.vx = 0;
+        this.vy = 0;
+        this.friction = -0.92; // Чуть тяжелее движение
+        this.ease = 0.06;      // Скорость возврата (медленнее = эффектнее)
+    }
+
+    draw() {
+        ctx.fillStyle = 'rgba(255, 255, 255, ' + (Math.random() * 0.5 + 0.5) + ')'; // Мерцание
+        ctx.fillRect(this.x, this.y, this.size, this.size);
+    }
+
+    update() {
+        let dx = mouse.x - this.x;
+        let dy = mouse.y - this.y;
+        let distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance < mouse.radius) {
+            let force = (mouse.radius - distance) / mouse.radius;
+            let angle = Math.atan2(dy, dx);
+            
+            // Эффект взрыва от мышки
+            this.vx -= Math.cos(angle) * force * 5;
+            this.vy -= Math.sin(angle) * force * 5;
+        }
+
+        this.vx *= this.friction;
+        this.vy *= this.friction;
+
+        // Возврат домой с небольшой дрожью
+        this.x += this.vx + (this.originX - this.x) * this.ease + (Math.random() * 0.4 - 0.2);
+        this.y += this.vy + (this.originY - this.y) * this.ease + (Math.random() * 0.4 - 0.2);
+    }
+}
+
+function init() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = 'white';
+    ctx.font = '900 250px Inter, Arial, sans-serif'; // Жирный шрифт как на референсе
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('TILUSER', canvas.width / 2, canvas.height / 2);
+
+    const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    particles = [];
+
+    // Шаг 3 создает более плотное облако частиц
+    for (let y = 0; y < canvas.height; y += 3) {
+        for (let x = 0; x < canvas.width; x += 3) {
+            const index = (y * canvas.width + x) * 4;
+            if (pixels[index + 3] > 128) {
+                particles.push(new Particle(x, y));
+            }
+        }
+    }
+}
+
+function animate() {
+    ctx.fillStyle = 'rgba(10, 10, 10, 0.8)'; // Оставляем микро-шлейф
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    for (let i = 0; i < particles.length; i++) {
+        particles[i].update();
+        particles[i].draw();
+    }
+    requestAnimationFrame(animate);
+}
+
+init();
+animate();
+
+window.addEventListener('resize', () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    init();
+});
+</script>
+
+</body>
+</html>

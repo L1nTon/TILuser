@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unium Mosaic Grid</title>
+    <style>
+        :root { --primary-blue: #001bb1; }
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background: #fff;
+            overflow: hidden;
+            font-family: sans-serif; }
+        
+        .container {
+            position: absolute;
+            z-index: 10;
+            top: 30%;
+            left: 8%;
+            transform: translateY(-50%);
+            pointer-events: none;
+        }
+        h1 {
+            font-size: 8vw;
+            line-height: 0.9;
+            margin: 0;
+            font-weight: 900;
+            color: #000;
+        }
+        h1 span:last-child {
+            /* margin-left: 20px; */
+            display: inline-block;
+            transform: translate(-1.01em, 6vw);
+        }
+
+        .subheader
+        {
+            position: absolute;
+            bottom: 10%;
+            left: 8%;
+            width: 80%;
+            max-width: 800px;
+            z-index: 10;
+        }
+        .subheader .subheader-title {
+            font-size: 1.5vw;
+            margin: 0 0 10px 0;
+            font-weight: 600;
+            color: #4d4d4d;
+        }
+        .subheader .subheader-content {
+            font-size: 0.8vw;
+            margin: 0;
+            font-weight: 400;
+            color: #94969d;
+        }
+
+        @media (max-width: 1200px){
+
+            .container {
+                position: absolute;
+                z-index: 10;
+                top: 100px;
+                left: 100px;
+                pointer-events: none;
+            }
+        }
+        @media (max-width: 756px){
+
+            .container {
+                position: absolute;
+                z-index: 10;
+                top: 50px;
+                left: 50px;
+                pointer-events: none;
+            }
+
+            .subheader .subheader-title {
+                font-size: 2vw;
+            }
+            .subheader .subheader-content {
+                font-size: 1.2vw;
+            }
+        }
+
+        #canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1><span>TIL</span><span>USER</span></h1>
+    </div>
+
+    <div class="subheader">
+        <p class="subheader-title">Lorem ipsum dolor sit amet.</p>
+        <p class="subheader-content">Lorem ipsum dolor sit amet consectetur, adipisicing elit. Voluptatibus repellat, aliquid quod commodi nisi maiores, eligendi placeat, voluptatum quasi voluptas quae dolorem tempore a recusandae cum! Reiciendis ipsum necessitatibus similique a repellat, laborum cupiditate? Repellat.</p>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+let config = {
+    gridSize: 70, // Размер ячеек (сделай больше/меньше здесь)
+    shapeScale: 1.4,
+    blueColor: '#001bb1',
+    lineColorInside: 'rgba(255, 255, 255, 0.4)',
+    chaosFactor: 25 // Сила искажения ячеек
+};
+
+let nodes = [];
+let rows, cols;
+let isHovered = false;
+
+function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    config.shapeScale = canvas.width < 600 ? 0.8 : canvas.width < 768 ? 1 : 1.4;
+    config.gridSize =  canvas.width < 600 ? 60 : canvas.width < 768 ? 50 : 70;
+
+    cols = Math.ceil(canvas.width / config.gridSize) + 1;
+    rows = Math.ceil(canvas.height / config.gridSize) + 1;
+    
+    initNodes();
+}
+
+function initNodes() {
+    nodes = [];
+    for (let y = 0; y < rows; y++) {
+        nodes[y] = [];
+        for (let x = 0; x < cols; x++) {
+            nodes[y][x] = {
+                baseX: x * config.gridSize,
+                baseY: y * config.gridSize,
+                offsetX: (Math.random() - 0.5) * config.chaosFactor * 2,
+                offsetY: (Math.random() - 0.5) * config.chaosFactor * 2,
+                currX: 0,
+                currY: 0,
+                // Новые параметры для плавной анимации:
+                angle: Math.random() * Math.PI * 2, // Случайная начальная фаза
+                speed: 0.02 + Math.random() * 0.03  // Скорость покачивания
+            };
+            nodes[y][x].currX = nodes[y][x].baseX + nodes[y][x].offsetX;
+            nodes[y][x].currY = nodes[y][x].baseY + nodes[y][x].offsetY;
+        }
+    }
+}
+
+function defineShapePath(context) {
+    const s = config.shapeScale;
+    const isMobile = canvas.width < 768;
+    const ox = isMobile ? (canvas.width - 600 * s) / 2 : (canvas.width - 600 * s) * 0.85;
+    const oy = (canvas.height - 450 * s) / 2;
+    const r = 45 * s;
+
+    context.beginPath();
+    context.moveTo(ox + 40*s + r, oy + 40*s);
+    context.lineTo(ox + 350*s - r, oy + 40*s);
+    context.quadraticCurveTo(ox + 350*s, oy + 40*s, ox + 350*s, oy + 40*s + r);
+    context.lineTo(ox + 350*s, oy + 180*s - r);
+    context.quadraticCurveTo(ox + 350*s, oy + 180*s, ox + 350*s + r, oy + 180*s);
+    context.lineTo(ox + 600*s - r, oy + 180*s);
+    context.quadraticCurveTo(ox + 600*s, oy + 180*s, ox + 600*s, oy + 180*s + r);
+    context.lineTo(ox + 600*s, oy + 450*s - r);
+    context.quadraticCurveTo(ox + 600*s, oy + 450*s, ox + 600*s - r, oy + 450*s);
+    context.lineTo(ox + 250*s + r, oy + 450*s);
+    context.quadraticCurveTo(ox + 250*s, oy + 450*s, ox + 250*s, oy + 450*s - r);
+    context.lineTo(ox + 250*s, oy + 320*s + r);
+    context.quadraticCurveTo(ox + 250*s, oy + 320*s, ox + 250*s - r, oy + 320*s);
+    context.lineTo(ox + 40*s + r, oy + 320*s);
+    context.quadraticCurveTo(ox + 40*s, oy + 320*s, ox + 40*s, oy + 320*s - r);
+    context.lineTo(ox + 40*s, oy + 40*s + r);
+    context.quadraticCurveTo(ox + 40*s, oy + 40*s, ox + 40*s + r, oy + 40*s);
+    context.closePath();
+}
+
+function updateNodes() {
+    for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+            let n = nodes[y][x];
+            let targetX, targetY;
+
+            if (isHovered) {
+                // ПРИ НАВЕДЕНИИ: Строго в сетку
+                targetX = n.baseX;
+                targetY = n.baseY;
+            } else {
+                // В ПОКОЕ: "Дышащий" хаос
+                n.angle += n.speed; // Увеличиваем угол для движения
+                
+                // Добавляем небольшое волновое движение к изначальному смещению
+                const waveX = Math.cos(n.angle) * 10; 
+                const waveY = Math.sin(n.angle) * 10;
+                
+                targetX = n.baseX + n.offsetX + waveX;
+                targetY = n.baseY + n.offsetY + waveY;
+            }
+
+            // Плавность перехода (0.1 - мягко, 0.2 - быстрее)
+            n.currX += (targetX - n.currX) * 0.1;
+            n.currY += (targetY - n.currY) * 0.1;
+        }
+    }
+}
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // 1. Синяя форма
+    defineShapePath(ctx);
+    ctx.fillStyle = config.blueColor;
+    ctx.fill();
+
+    // 2. Обрезка и рисование сетки
+    ctx.save();
+    defineShapePath(ctx);
+    ctx.clip();
+
+    ctx.strokeStyle = config.lineColorInside;
+    ctx.lineWidth = 1.2;
+
+    for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+            let n = nodes[y][x];
+
+            // Линия вправо
+            if (x < cols - 1) {
+                ctx.beginPath();
+                ctx.moveTo(n.currX, n.currY);
+                ctx.lineTo(nodes[y][x+1].currX, nodes[y][x+1].currY);
+                ctx.stroke();
+            }
+            // Линия вниз
+            if (y < rows - 1) {
+                ctx.beginPath();
+                ctx.moveTo(n.currX, n.currY);
+                ctx.lineTo(nodes[y+1][x].currX, nodes[y+1][x].currY);
+                ctx.stroke();
+            }
+        }
+    }
+    ctx.restore();
+}
+
+function animate() {
+    updateNodes();
+    draw();
+    requestAnimationFrame(animate);
+}
+
+// --- ИЗМЕНЕННЫЙ БЛОК СОБЫТИЙ ---
+
+window.addEventListener('mousemove', (e) => {
+    defineShapePath(ctx); 
+    if (ctx.isPointInPath(e.clientX, e.clientY)) {
+        isHovered = true;
+    } else {
+        isHovered = false;
+    }
+});
+
+// Для мобильных устройств (проверка по первому касанию)
+window.addEventListener('touchstart', (e) => {
+    const touch = e.touches[0];
+    defineShapePath(ctx);
+    if (ctx.isPointInPath(touch.clientX, touch.clientY)) {
+        isHovered = true;
+    }
+});
+
+window.addEventListener('touchend', () => {
+    isHovered = false;
+});
+
+window.addEventListener('mouseleave', () => {
+    isHovered = false;
+});
+
+// Запуск
+window.addEventListener('resize', resize);
+resize();
+animate();
+</script>
+</body>
+</html>
